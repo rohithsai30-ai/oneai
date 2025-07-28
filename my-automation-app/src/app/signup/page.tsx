@@ -5,6 +5,8 @@ import { Card, Form, Input, Button, Typography, message, Space, Checkbox } from 
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, GlobalOutlined } from '@ant-design/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabaseHelpers } from '../../lib/supabase';
+import bcrypt from 'bcryptjs';
 
 const { Title, Text } = Typography;
 
@@ -15,17 +17,57 @@ const SignUpPage = () => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // Simulate API call for account creation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Check if email already exists
+      const emailCheck = await supabaseHelpers.checkEmailExists(values.email);
       
-      // For demo purposes, simulate successful account creation
-      message.success('Account created successfully! Welcome to R1 AI!');
+      if (!emailCheck.success) {
+        message.error('Error checking email. Please try again.');
+        return;
+      }
       
-      // Redirect to dashboard after successful signup
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
+      if (emailCheck.exists) {
+        message.error('An account with this email already exists. Please use a different email.');
+        return;
+      }
+      
+      // Hash the password for security
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(values.password, saltRounds);
+      
+      // Prepare user data for database
+      const userData = {
+        full_name: values.fullName,
+        email: values.email.toLowerCase(),
+        business_name: values.businessName,
+        website: values.website || null,
+        phone: values.phone || null,
+        password_hash: passwordHash,
+        status: 'active' as const
+      };
+      
+      // Save user to Supabase
+      const result = await supabaseHelpers.insertUser(userData);
+      
+      if (result.success) {
+        message.success('Account created successfully! Welcome to R1 AI!');
+        
+        // Store user info in localStorage for the session
+        localStorage.setItem('r1ai_user', JSON.stringify({
+          id: result.data?.id,
+          fullName: values.fullName,
+          email: values.email,
+          businessName: values.businessName
+        }));
+        
+        // Redirect to dashboard after successful signup
+        setTimeout(() => {
+          router.push('/onboarding');
+        }, 1000);
+      } else {
+        message.error(`Account creation failed: ${result.error}`);
+      }
     } catch (error) {
+      console.error('Signup error:', error);
       message.error('Account creation failed. Please try again.');
     } finally {
       setLoading(false);

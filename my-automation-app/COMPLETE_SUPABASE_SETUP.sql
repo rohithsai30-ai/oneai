@@ -1,44 +1,15 @@
-# Supabase Setup for R1 AI Automation App
+-- R1 AI Complete Database Setup
+-- Run this entire script in your Supabase SQL Editor
 
-Your app is now configured to use Supabase as the database! Follow these steps to complete the setup.
+-- Drop existing tables if they exist (to avoid conflicts)
+DROP TABLE IF EXISTS payment_history CASCADE;
+DROP TABLE IF EXISTS ixp_transactions CASCADE;
+DROP TABLE IF EXISTS ixp_wallet CASCADE;
+DROP TABLE IF EXISTS business_onboarding CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS interactions CASCADE;
+DROP TABLE IF EXISTS submissions CASCADE;
 
-## 🚀 Step 1: Create Supabase Account & Project
-
-1. **Go to**: https://supabase.com
-2. **Sign up** for free (GitHub login recommended)
-3. **Create a new project**:
-   - Project name: `r1-ai-automation`
-   - Database password: (choose a strong password - save it!)
-   - Region: Choose closest to your location
-
-## 🔑 Step 2: Get Your Credentials
-
-After your project is created:
-1. Go to **Settings** → **API** in your Supabase dashboard
-2. Copy these two values:
-   - **Project URL** (starts with `https://`)
-   - **Anon public key** (starts with `eyJ`)
-
-## 📝 Step 3: Add Environment Variables
-
-Create a file called `.env.local` in your project root and add:
-
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_project_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-```
-
-**Replace** `your_project_url_here` and `your_anon_key_here` with the actual values from Step 2.
-
-## 🗄️ Step 4: Create Database Tables
-
-In your Supabase dashboard:
-1. Go to **SQL Editor**
-2. Click **New Query**
-3. Copy and paste this SQL code:
-
-```sql
 -- Create submissions table
 CREATE TABLE submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -62,18 +33,20 @@ CREATE TABLE interactions (
 
 -- Create users table
 CREATE TABLE users (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  business_name TEXT NOT NULL,
+  business_name TEXT,
   website TEXT,
   phone TEXT,
   password_hash TEXT NOT NULL,
-  status TEXT CHECK (status IN ('active', 'inactive', 'pending')) DEFAULT 'active'
+  role TEXT CHECK (role IN ('user', 'admin', 'super_admin')) DEFAULT 'user',
+  status TEXT CHECK (status IN ('active', 'inactive', 'suspended')) DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create business_onboarding table
+-- Create business_onboarding table (THIS IS THE KEY MISSING TABLE!)
 CREATE TABLE business_onboarding (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -133,6 +106,16 @@ CREATE TABLE payment_history (
   description TEXT NOT NULL
 );
 
+-- Create indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_business_onboarding_user_id ON business_onboarding(user_id);
+CREATE INDEX idx_ixp_wallet_user_id ON ixp_wallet(user_id);
+CREATE INDEX idx_ixp_transactions_user_id ON ixp_transactions(user_id);
+CREATE INDEX idx_ixp_transactions_wallet_id ON ixp_transactions(wallet_id);
+CREATE INDEX idx_payment_history_user_id ON payment_history(user_id);
+CREATE INDEX idx_submissions_created_at ON submissions(created_at);
+CREATE INDEX idx_interactions_created_at ON interactions(created_at);
+
 -- Enable Row Level Security (recommended for production)
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE interactions ENABLE ROW LEVEL SECURITY;
@@ -151,45 +134,37 @@ CREATE POLICY "Allow all operations on business_onboarding" ON business_onboardi
 CREATE POLICY "Allow all operations on ixp_wallet" ON ixp_wallet FOR ALL USING (true);
 CREATE POLICY "Allow all operations on ixp_transactions" ON ixp_transactions FOR ALL USING (true);
 CREATE POLICY "Allow all operations on payment_history" ON payment_history FOR ALL USING (true);
-```
 
-4. Click **Run** to execute the SQL
+-- Create admin_analytics table for system metrics
+CREATE TABLE admin_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  metric_name TEXT NOT NULL,
+  metric_value JSONB NOT NULL,
+  date_recorded DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-## ✅ Step 5: Test Your Setup
+-- Create admin_logs table for audit trail
+CREATE TABLE admin_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_user_id UUID REFERENCES users(id),
+  action TEXT NOT NULL,
+  target_user_id UUID REFERENCES users(id),
+  details JSONB,
+  ip_address INET,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-1. **Restart your development server**:
-   ```bash
-   npm run dev
-   ```
+-- Insert sample admin user (password: admin123)
+-- You should change this password in production!
+INSERT INTO users (full_name, email, business_name, password_hash, role) VALUES 
+('Admin User', 'admin@r1ai.com', 'R1 AI Admin', '$2b$10$1.XcZwhI92Qf90yRkfwwIuz4d6n/qt3Rsauym0j5pHCPWxQnBjqyC', 'admin');
 
-2. **Test the app**:
-   - Go to http://localhost:3000
-   - Click any Foundation Service button
-   - Check your Supabase dashboard → **Table Editor** to see the data!
+-- Insert sample data for testing (optional)
+-- You can uncomment these lines if you want test data
 
-## 🎯 What You Get
+-- INSERT INTO users (full_name, email, business_name, password_hash) VALUES 
+-- ('Test User', 'test@example.com', 'Test Business', '$2b$10$test.hash.here');
 
-- **Cloud Database**: Your data is stored in Supabase (PostgreSQL)
-- **Real-time Dashboard**: View all data in Supabase dashboard
-- **Automatic Backups**: Supabase handles backups for you
-- **Scalable**: Can handle thousands of users
-- **Free Tier**: 50,000 rows, 500MB storage
-
-## 🔍 Viewing Your Data
-
-- **In App**: Your R1 AI app shows all data automatically
-- **Supabase Dashboard**: Go to **Table Editor** → `submissions` or `interactions`
-- **Real-time**: Changes appear instantly in both places
-
-## 🆘 Troubleshooting
-
-**If you see errors:**
-1. Check that `.env.local` has the correct Supabase URL and key
-2. Verify the SQL tables were created successfully
-3. Restart your development server after adding environment variables
-
-**Need help?** The app will fallback to localStorage if Supabase is unavailable.
-
----
-
-🎉 **You're all set!** Your R1 AI automation app now uses a professional cloud database.
+-- Success message
+SELECT 'SUCCESS: All R1 AI database tables created successfully with admin functionality!' as message;

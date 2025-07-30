@@ -148,8 +148,13 @@ const BusinessOnboardingPage = () => {
         onboarding_completed: true
       };
 
+      console.log('Preparing to save onboarding data:', onboardingData);
+      console.log('User ID being used:', userInfo.id);
+      console.log('User info from localStorage:', userInfo);
+
       // Save to Supabase
       const result = await supabaseHelpers.insertBusinessOnboarding(onboardingData);
+      console.log('Onboarding save result:', result);
 
       if (result.success) {
         message.success('Business onboarding completed successfully! Welcome to R1 AI!');
@@ -161,9 +166,9 @@ const BusinessOnboardingPage = () => {
         };
         localStorage.setItem('r1ai_user', JSON.stringify(updatedUser));
         
-        // Redirect to dashboard
+        // Redirect to business insights dashboard
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/business-insights');
         }, 1500);
       } else {
         message.error(`Onboarding failed: ${result.error}`);
@@ -183,12 +188,101 @@ const BusinessOnboardingPage = () => {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
+      padding: '20px', 
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #0a0a0a 100%)',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <Card style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <Title level={2} style={{ color: '#1890ff', marginBottom: '8px' }}>
+      {/* AI Processor Background Elements */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 40% 40%, rgba(0, 255, 0, 0.05) 0%, transparent 50%)
+        `,
+        zIndex: 1
+      }} />
+      
+      {/* Circuit Board Pattern */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `
+          linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(45deg, rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(-45deg, rgba(0, 255, 0, 0.05) 1px, transparent 1px)
+        `,
+        backgroundSize: '50px 50px, 50px 50px, 25px 25px, 25px 25px',
+        zIndex: 2
+      }} />
+      
+      {/* Floating Particles */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          radial-gradient(2px 2px at 20px 30px, rgba(0, 255, 255, 0.3), transparent),
+          radial-gradient(2px 2px at 40px 70px, rgba(255, 0, 255, 0.3), transparent),
+          radial-gradient(1px 1px at 90px 40px, rgba(0, 255, 0, 0.3), transparent),
+          radial-gradient(1px 1px at 130px 80px, rgba(0, 255, 255, 0.3), transparent),
+          radial-gradient(2px 2px at 160px 30px, rgba(255, 0, 255, 0.3), transparent)
+        `,
+        backgroundRepeat: 'repeat',
+        backgroundSize: '200px 100px',
+        animation: 'float 20s ease-in-out infinite',
+        zIndex: 3
+      }} />
+      
+      {/* Neural Network Lines */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `
+          linear-gradient(45deg, transparent 40%, rgba(0, 255, 255, 0.1) 50%, transparent 60%),
+          linear-gradient(-45deg, transparent 40%, rgba(255, 0, 255, 0.1) 50%, transparent 60%)
+        `,
+        backgroundSize: '100px 100px',
+        animation: 'pulse 4s ease-in-out infinite',
+        zIndex: 4
+      }} />
+      
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          33% { transform: translateY(-10px) rotate(1deg); }
+          66% { transform: translateY(5px) rotate(-1deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
+      `}</style>
+      
+      <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        <Card style={{ 
+          marginBottom: '20px', 
+          textAlign: 'center', 
+          background: 'rgba(255, 255, 255, 0.1)', 
+          backdropFilter: 'blur(10px)', 
+          borderRadius: '10px', 
+          padding: '20px'
+        }}>
+          <Title level={2} style={{ textAlign: 'center', marginBottom: '8px', color: '#1a1a2e' }}>
             Welcome to R1 AI, {userInfo.fullName}!
           </Title>
           <Paragraph>
@@ -197,7 +291,12 @@ const BusinessOnboardingPage = () => {
           <Progress percent={100} showInfo={false} strokeColor="#1890ff" />
         </Card>
 
-        <Card>
+        <Card style={{ 
+          background: 'rgba(255, 255, 255, 0.1)', 
+          backdropFilter: 'blur(10px)', 
+          borderRadius: '10px', 
+          padding: '20px'
+        }}>
           <Form
             form={form}
             name="business-onboarding"

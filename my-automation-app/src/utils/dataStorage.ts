@@ -17,10 +17,12 @@ export interface UserSubmission {
 export interface UserInteraction {
   id: string;
   timestamp: string;
+  created_at?: string;
   type: 'interaction';
   action: string;
   service: string;
   response?: any;
+  response_data?: any;
   status: 'pending' | 'success' | 'error';
 }
 
